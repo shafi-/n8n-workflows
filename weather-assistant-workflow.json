@@ -1,0 +1,658 @@
+{
+  "name": "Interview",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1460,
+        460
+      ],
+      "id": "69b8b544-473e-40f8-b34a-f85c4fb1c6b2",
+      "name": "When chat message received",
+      "webhookId": "72da5e4f-d795-45b2-8197-9c162f5af293"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fd5de02e-f6c4-4ccc-937f-365404349aba",
+              "leftValue": "={{ $json.city }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "6bca5a59-34fd-40de-8b7c-7b66810745c7",
+              "leftValue": "={{ $('CityInfo').first().json.supportedCities.map(city => city.name.toLowerCase()) }}",
+              "rightValue": "={{ $json.city.toLowerCase() }}",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "2544fde4-6346-4f9d-9fec-656fb62aef7f",
+              "leftValue": "={{ $json.start_time }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "4ffaa6b1-a2b5-4e33-9c5b-31861b69f610",
+              "leftValue": "={{ $json.end_time }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "2ca23c3d-2de4-4e9f-8407-168675e8b896",
+              "leftValue": "={{ ['current', 'historical', 'forecast'] }}",
+              "rightValue": "={{ $json.intent }}",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "fa1bb6fd-ad11-484e-b3e0-255dbc9c9c88",
+              "leftValue": "={{ $json.clarification_question }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -360,
+        460
+      ],
+      "id": "1cc4b4f2-d0cb-4177-bee4-da9b01097de0",
+      "name": "If $lllm.query is not empty"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.output.replaceAll('```', '').replace('json', '');\nconst parsedObject = JSON.parse(text.replaceAll('\\n', ''));\n\nreturn [{\n  json: parsedObject,\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -580,
+        460
+      ],
+      "id": "b5bca6ee-8dfe-4d23-8fbb-f70c8f47eb14",
+      "name": "Parse LLM output"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a friendly weather assistant responding to weather-related questions in a natural, conversational tone.\n\nFollow these guidelines:\n- Include key weather details (e.g., temperature in °C, precipitation, weather condition) relevant to the intent (historical, current, or forecast).\n- For historical queries, focus on the specific time or range (e.g., \"four hours ago\").\n- For current queries, describe the current weather.\n- For forecast queries, summarize the forecast for the requested day or range (e.g., \"tomorrow\").\n\nUser Query \n- city: {{ $('Parse LLM output').first().json.city }}\n- intent: {{ $('Parse LLM output').first().json.intent }}\n{{ $('Parse LLM output').first().json.intent !== 'current' ?\n`start_time - ${$('Parse LLM output').first().json.start_time}, end_time - ${$('Parse LLM output').first().json.end_time}`\n: '' }}\n\nUser message - {{ $('When chat message received').first().json.chatInput }}\nWeather Data of the asked day: {{ $json.toJsonString() }}\n\nGenerate a natural, concise response.\nAvoid technical words. Do not mention the numeric date/time.\nReturn only the response text (no JSON or extra formatting).\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        520,
+        260
+      ],
+      "id": "4c1e901f-dc08-42f1-8d8d-4088ad82b424",
+      "name": "Prepare answer",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "current",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9faa9c5c-5161-46ff-99d1-19fa25dba077"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Intent:Current"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ce2079b6-63d7-4d2d-befd-2f5c4c838c3b",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "historical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Intent:Historical"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6bfbc3ab-20b6-4475-8ab1-651e4e5d9fb9",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "forecast",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Intent:Forecast"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        80,
+        360
+      ],
+      "id": "8e53b67c-493e-4c16-b774-0734d0d5568b",
+      "name": "Intent switch"
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "={{ $json.city_info.lat }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ $json.city_info.lon }}"
+            },
+            {
+              "name": "current_weather",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        160
+      ],
+      "id": "af03913e-7e6e-4bb0-8d0d-e6c51de9c227",
+      "name": "Get current weather info",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "={{ $json.city_info.lat }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ $json.city_info.lon }}"
+            },
+            {
+              "name": "=hourly",
+              "value": "={{ $json.features || 'temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation_probability,precipitation,rain,showers,snowfall,snow_depth,surface_pressure,pressure_msl,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,visibility,evapotranspiration,wind_gusts_10m' }}"
+            },
+            {
+              "name": "start_date",
+              "value": "={{ $json.start_time.toDateTime().format('yyyy-MM-dd') }}"
+            },
+            {
+              "name": "end_date",
+              "value": "={{ $json.end_time.toDateTime().format('yyyy-MM-dd') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        360
+      ],
+      "id": "60350427-b949-4566-b443-90f8e06a57b1",
+      "name": "Fetch historical weather info",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "={{ $json.city_info.lat }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ $json.city_info.lon }}"
+            },
+            {
+              "name": "=hourly",
+              "value": "={{ $json.features ? $json.features : 'temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation_probability,precipitation,rain,showers,snowfall,snow_depth,surface_pressure,pressure_msl,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,visibility,evapotranspiration,wind_gusts_10m' }}"
+            },
+            {
+              "name": "start_date",
+              "value": "={{ $json.start_time.toDateTime().format('yyyy-MM-dd') }}"
+            },
+            {
+              "name": "end_date",
+              "value": "={{ $json.end_time.toDateTime().format('yyyy-MM-dd') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        560
+      ],
+      "id": "105524d9-c1f5-4beb-8c71-f5160446d80b",
+      "name": "Get weather forecast",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        608,
+        480
+      ],
+      "id": "70a9630e-14dd-49db-82bc-cdfae843d155",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dOuivhtQdrt4VoZW",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an expert in extracting structured weather query data from a user's natural language message. Use the conversation history to ensure contextually relevant responses. Handle misspelled city names using fuzzy matching (e.g., \"Melborn\" should match \"Melbourne\").\n\nSupported cities and timezones: {{ $json.supportedCities.map(city => ({ name: city.name, timezone: city.timezone })).toJsonString() }}.\n\nToday is {{ $now.format('cccc') }} ({{ $now.toISO() }}). Calculate start_time and end_time in the city's timezone (e.g., Australia/Melbourne) in ISO format with timezone offset (e.g., UTC \"2025-04-29T00:00:00Z\" is \"2025-04-28T14:00:00Z\" in Melbourne).\n\nYour task is to identify:\n- is_weather_query (boolean): True if the query is weather-related, false otherwise.\n- city (string): Must be one of the supported cities. Use fuzzy matching for misspellings.\n- start_time (string): ISO timestamp in the city's timezone. For \"current\", use current time. For \"forecast\", use query date or next day. For \"historical\", use query date or past range.\n- end_time (string): ISO timestamp in the city's timezone. For \"current\", same as start_time. For \"forecast\" or \"historical\", end of the specified range.\n- intent (string): \"historical\", \"current\", or \"forecast\".\n- features (string): Comma-separated weather features (e.g., \"temperature_2m,precipitation\"). Default to \"temperature_2m,precipitation,weather_code\" for current/forecast, \"temperature_2m_mean,precipitation_sum\" for historical, unless user specifies others (e.g., \"humidity\" → \"relative_humidity_2m\").\n- clarification_question (string): If city, intent, or time is unclear, return a question like \"I'm a weather information assistant. Please specify the city (Sydney, Brisbane, Melbourne, Canberra) or time.\"\n\nRules:\n- If city is missing, use conversation history to infer (e.g., \"tomorrow\" after \"Sydney weather\"). If still unclear, set city to null and add clarification_question.\n- If intent is ambiguous, infer from keywords (e.g., \"today\" → current, \"tomorrow\" → forecast, \"last week\" → historical). If unclear, set intent to null and add clarification_question.\n- For time, interpret relative terms (e.g., \"tomorrow\" → next day, \"last week\" → previous 7 days) in the city's timezone. If unclear, set start_time/end_time to null and add clarification_question.\n- For non-weather queries (e.g., \"Hello\"), set is_weather_query to false and return null for other fields.\n- Use the city's timezone from the supported cities list to adjust timestamps.\n\nReturn a stringified JSON object:\n{\"is_weather_query\":true,\"city\":\"Melbourne\",\"start_time\":\"2025-04-28T14:00:00Z\",\"end_time\":\"2025-04-29T13:59:59Z\",\"intent\":\"forecast\",\"features\":\"temperature_2m,precipitation\",\"clarification_question\":null}\n\nEnsure the output is valid JSON that can be parsed without formatting issues."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        -988,
+        460
+      ],
+      "id": "98ee0b03-734c-4fb4-856c-ab06efe82456",
+      "name": "AI Agent: User question parser",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -900,
+        680
+      ],
+      "id": "dd23f3e5-fbf2-4f9b-9a5c-c6ce31ab5c86",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "let question = $input.first().json.clarification_question;\n\nif (question) {\n  return [{\n    json: {\n      question: question || 'no-clarification_question',\n    }\n  }]\n}\n\nlet isNonWeatherQuery = !Boolean($input.first().json.is_weather_query);\nlet noCity = $input.first().json.city === null;\nlet noTime = $input.first().json.start_date === null;\n\nif (isNonWeatherQuery) {\n  question = \"I am a weather assistant. Currently only 4 cities of Australia are supported. If you want weather information of those cities, I can help.\"\n} else if (noCity && !noTime) {\n  question = \"I could not understand earlier. Can you tell me the city name again?\"\n} else if (!noCity && noTime) {\n  question = \"I could not understand earlier. Can you tell me the time again?\"\n} else {\n  question = \"I could you understand the question properly. Please ask again.\"\n}\n\nreturn [{\n  json: {\n    question,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        560
+      ],
+      "id": "b1107de0-dd84-4bdd-aab8-8af2886f6b5c",
+      "name": "Prepare clarification question"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b",
+        "options": {
+          "temperature": 0,
+          "penalizeNewline": true,
+          "format": "json"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -1460,
+        820
+      ],
+      "id": "2a0eba29-d67e-41cd-88a9-af5a6a69cdd1",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "GINikpkF6oCjzfZx",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1020,
+        680
+      ],
+      "id": "cf2dd848-7425-41cf-9ccf-cedc2c3ebe3a",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dOuivhtQdrt4VoZW",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const supportedCities = [\n  { \"name\": \"Sydney\", \"lat\": -33.8688, \"lon\": 151.2093, \"timezone\": \"Australia/Sydney\" },\n  { \"name\": \"Brisbane\", \"lat\": -27.4698, \"lon\": 153.0251, \"timezone\": \"Australia/Brisbane\" },\n  { \"name\": \"Melbourne\", \"lat\": -37.8136, \"lon\": 144.9631, \"timezone\": \"Australia/Melbourne\" },\n  { \"name\": \"Canberra\", \"lat\": -35.2809, \"lon\": 149.1300, \"timezone\": \"Australia/Canberra\" }\n];\nreturn [{\n  json: {\n    ...$input.first().json,\n    supportedCities,\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1240,
+        460
+      ],
+      "id": "d782ea3d-0ffd-474f-bef4-94c3f813c3a0",
+      "name": "CityInfo"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cityInfoMap = $(\"CityInfo\").first().json.supportedCities;\n\nconst keys = $input.first().json;\n\nconst cityInfo = cityInfoMap.find(city => city.name.toLowerCase() === keys.city.toLowerCase());\n\nreturn [{\n  json: {\n    ...keys,\n    start_time: DateTime.fromISO(keys.start_time).toUTC().toISO(),\n    end_time: DateTime.fromISO(keys.end_time).toUTC().toISO(),\n    city_info: cityInfo,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        360
+      ],
+      "id": "e87cc695-da18-484e-aa05-808fcb36f012",
+      "name": "PrepareWeatherQueryParams"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "CityInfo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If $lllm.query is not empty": {
+      "main": [
+        [
+          {
+            "node": "PrepareWeatherQueryParams",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare clarification question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM output": {
+      "main": [
+        [
+          {
+            "node": "If $lllm.query is not empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent switch": {
+      "main": [
+        [
+          {
+            "node": "Get current weather info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch historical weather info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get weather forecast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get current weather info": {
+      "main": [
+        [
+          {
+            "node": "Prepare answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch historical weather info": {
+      "main": [
+        [
+          {
+            "node": "Prepare answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get weather forecast": {
+      "main": [
+        [
+          {
+            "node": "Prepare answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare answer": {
+      "main": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Prepare answer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: User question parser": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent: User question parser",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent: User question parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CityInfo": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: User question parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PrepareWeatherQueryParams": {
+      "main": [
+        [
+          {
+            "node": "Intent switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "42041d32-01eb-4086-988c-5e8c1c276920",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "089593b0375f52cffd2e682594e43cdd96459883230a04bef809490471c267bb"
+  },
+  "id": "5ePgiE03XZByFGVu",
+  "tags": []
+}
