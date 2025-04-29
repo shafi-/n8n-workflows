@@ -1,10 +1,13 @@
 # What is weather assistant workflow?
 Weather assistant workflow is a n8n workflow that uses LLM and weather api to answer weather questions.
 
+## Overview
+![n8n-workflow-screenshot](./resources/workflow.png)
+
 # How does it work?
 In brief, it parses user's question, extracts city, time and intent, then calls weather api to get weather data. Finally, it generates a response based on the weather data and intent.
 
-## Steps
+## Nodes
 - Trigger: Chat message received
 - Provide supported cities info
 - LLM to parse user's question and extract city, time and intent
@@ -19,6 +22,7 @@ In brief, it parses user's question, extracts city, time and intent, then calls 
 - It can answer weather question for current weather, forecast and historical weather
 - It can handle misspelling of city name
 - It can handle time in natural language
+- It asks clarification questions if it doesn't have enough information to call weather api
 
 ## How to use
 - make sure you have access to n8n and google gemini api key
