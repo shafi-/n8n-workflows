@@ -1,5 +1,5 @@
 {
-  "name": "Interview",
+  "name": "weather-assistant-workflow",
   "nodes": [
     {
       "parameters": {
@@ -9,7 +9,7 @@
       "typeVersion": 1.1,
       "position": [
         -1460,
-        460
+        600
       ],
       "id": "69b8b544-473e-40f8-b34a-f85c4fb1c6b2",
       "name": "When chat message received",
@@ -91,8 +91,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -360,
-        460
+        -424,
+        600
       ],
       "id": "1cc4b4f2-d0cb-4177-bee4-da9b01097de0",
       "name": "If $lllm.query is not empty"
@@ -104,8 +104,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -580,
-        460
+        -644,
+        600
       ],
       "id": "b5bca6ee-8dfe-4d23-8fbb-f70c8f47eb14",
       "name": "Parse LLM output"
@@ -113,14 +113,14 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You are a friendly weather assistant responding to weather-related questions in a natural, conversational tone.\n\nFollow these guidelines:\n- Include key weather details (e.g., temperature in °C, precipitation, weather condition) relevant to the intent (historical, current, or forecast).\n- For historical queries, focus on the specific time or range (e.g., \"four hours ago\").\n- For current queries, describe the current weather.\n- For forecast queries, summarize the forecast for the requested day or range (e.g., \"tomorrow\").\n\nUser Query \n- city: {{ $('Parse LLM output').first().json.city }}\n- intent: {{ $('Parse LLM output').first().json.intent }}\n{{ $('Parse LLM output').first().json.intent !== 'current' ?\n`start_time - ${$('Parse LLM output').first().json.start_time}, end_time - ${$('Parse LLM output').first().json.end_time}`\n: '' }}\n\nUser message - {{ $('When chat message received').first().json.chatInput }}\nWeather Data of the asked day: {{ $json.toJsonString() }}\n\nGenerate a natural, concise response.\nAvoid technical words. Do not mention the numeric date/time.\nReturn only the response text (no JSON or extra formatting).\n",
+        "text": "=You are a friendly weather assistant responding to weather-related questions in a natural, conversational tone.\n\nFollow these guidelines:\n- Include key weather details (e.g., temperature in °C, precipitation, weather condition) relevant to the intent (historical, current, or forecast).\n- For historical queries, focus on the specific time or range (e.g., \"four hours ago\").\n- For current queries, describe the current weather.\n- For forecast queries, summarize the forecast for the requested day or range (e.g., \"tomorrow\").\n\nUser Query \n- city: {{ $('Parse LLM output').first().json.city }}\n- intent: {{ $('Parse LLM output').first().json.intent }}\n{{ $('Parse LLM output').first().json.intent !== 'current' ?\n`start_time - ${$('Parse LLM output').first().json.start_time}, end_time - ${$('Parse LLM output').first().json.end_time}`\n: '' }}\n\nUser message - {{ $('CityInfo').first().json.chatInput }}\nWeather Data of the asked day: {{ $json.toJsonString() }}\n\nGenerate a natural, concise response.\nAvoid technical words. Do not mention the numeric date/time.\nReturn only the response text (no JSON or extra formatting).\n",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
       "position": [
-        520,
-        260
+        456,
+        400
       ],
       "id": "4c1e901f-dc08-42f1-8d8d-4088ad82b424",
       "name": "Prepare answer",
@@ -211,8 +211,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        80,
-        360
+        16,
+        500
       ],
       "id": "8e53b67c-493e-4c16-b774-0734d0d5568b",
       "name": "Intent switch"
@@ -242,8 +242,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        300,
-        160
+        236,
+        300
       ],
       "id": "af03913e-7e6e-4bb0-8d0d-e6c51de9c227",
       "name": "Get current weather info",
@@ -283,8 +283,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        300,
-        360
+        236,
+        500
       ],
       "id": "60350427-b949-4566-b443-90f8e06a57b1",
       "name": "Fetch historical weather info",
@@ -324,8 +324,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        300,
-        560
+        236,
+        700
       ],
       "id": "105524d9-c1f5-4beb-8c71-f5160446d80b",
       "name": "Get weather forecast",
@@ -342,8 +342,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        608,
-        480
+        544,
+        620
       ],
       "id": "70a9630e-14dd-49db-82bc-cdfae843d155",
       "name": "Google Gemini Chat Model",
@@ -363,8 +363,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
       "position": [
-        -988,
-        460
+        -1020,
+        600
       ],
       "id": "98ee0b03-734c-4fb4-856c-ab06efe82456",
       "name": "AI Agent: User question parser",
@@ -377,21 +377,21 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        -900,
-        680
+        -872,
+        820
       ],
       "id": "dd23f3e5-fbf2-4f9b-9a5c-c6ce31ab5c86",
       "name": "Simple Memory"
     },
     {
       "parameters": {
-        "jsCode": "let question = $input.first().json.clarification_question;\n\nif (question) {\n  return [{\n    json: {\n      question: question || 'no-clarification_question',\n    }\n  }]\n}\n\nlet isNonWeatherQuery = !Boolean($input.first().json.is_weather_query);\nlet noCity = $input.first().json.city === null;\nlet noTime = $input.first().json.start_date === null;\n\nif (isNonWeatherQuery) {\n  question = \"I am a weather assistant. Currently only 4 cities of Australia are supported. If you want weather information of those cities, I can help.\"\n} else if (noCity && !noTime) {\n  question = \"I could not understand earlier. Can you tell me the city name again?\"\n} else if (!noCity && noTime) {\n  question = \"I could not understand earlier. Can you tell me the time again?\"\n} else {\n  question = \"I could you understand the question properly. Please ask again.\"\n}\n\nreturn [{\n  json: {\n    question,\n  }\n}];"
+        "jsCode": "let question = $input.first().json.clarification_question;\n\nlet supportedCities = $(\"CityInfo\").first().json.supportedCities.map(city => city.name).join(', ');\n\nconst defaultResponse = `I am a weather assistant. Currently ${supportedCities} cities are supported. If you want weather information of those cities, I can help.`;\n\nreturn [{\n  json: {\n    question: question ? question : defaultResponse,\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -140,
-        560
+        -204,
+        700
       ],
       "id": "b1107de0-dd84-4bdd-aab8-8af2886f6b5c",
       "name": "Prepare clarification question"
@@ -409,7 +409,7 @@
       "typeVersion": 1,
       "position": [
         -1460,
-        820
+        60
       ],
       "id": "2a0eba29-d67e-41cd-88a9-af5a6a69cdd1",
       "name": "Ollama Chat Model",
@@ -428,8 +428,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        -1020,
-        680
+        -992,
+        820
       ],
       "id": "cf2dd848-7425-41cf-9ccf-cedc2c3ebe3a",
       "name": "Google Gemini Chat Model1",
@@ -448,7 +448,7 @@
       "typeVersion": 2,
       "position": [
         -1240,
-        460
+        600
       ],
       "id": "d782ea3d-0ffd-474f-bef4-94c3f813c3a0",
       "name": "CityInfo"
@@ -460,11 +460,26 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -140,
-        360
+        -204,
+        500
       ],
       "id": "e87cc695-da18-484e-aa05-808fcb36f012",
       "name": "PrepareWeatherQueryParams"
+    },
+    {
+      "parameters": {
+        "path": "176bafd9-3b1f-46f0-8d08-ba5c5d0fcf13",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        1220
+      ],
+      "id": "32a81f53-6983-4100-a998-d8946aabe9a7",
+      "name": "Webhook",
+      "webhookId": "176bafd9-3b1f-46f0-8d08-ba5c5d0fcf13"
     }
   ],
   "pinData": {},
@@ -648,11 +663,18 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "42041d32-01eb-4086-988c-5e8c1c276920",
+  "versionId": "608dc81d-4dc5-4e52-85fc-0b089ba58149",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "089593b0375f52cffd2e682594e43cdd96459883230a04bef809490471c267bb"
   },
   "id": "5ePgiE03XZByFGVu",
-  "tags": []
+  "tags": [
+    {
+      "name": "Purpose: Interview",
+      "id": "MHo5FFTYYeKzEANA",
+      "createdAt": "2025-04-29T15:04:17.983Z",
+      "updatedAt": "2025-04-29T15:04:17.983Z"
+    }
+  ]
 }
